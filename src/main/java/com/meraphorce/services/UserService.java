@@ -1,13 +1,14 @@
 package com.meraphorce.services;
 
-import com.meraphorce.exceptions.UserNotFoundException;
-import com.meraphorce.models.User;
-import com.meraphorce.respositories.UserRepository;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import com.meraphorce.exceptions.UserNotFoundException;
+import com.meraphorce.models.User;
+import com.meraphorce.respositories.UserRepository;
 
 @Service
 public class UserService {
@@ -53,6 +54,19 @@ public class UserService {
     		throw new UserNotFoundException( id );
     	}
         userRepository.deleteById( id );
+    }
+    
+    public  List<String> getUsersNames(){
+        return userRepository.findAllNames();
+    }
+    
+    public void createUsersByBulk(List<User> usersList){
+    	if( usersList!=null && !usersList.isEmpty() ) {
+    		for( User user : usersList ) {
+    			user.setId( null );
+    			userRepository.save( user );
+    		}
+    	}
     }
     
 }
