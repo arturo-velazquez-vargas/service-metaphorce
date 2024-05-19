@@ -43,4 +43,15 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
     
+    @GetMapping("/getUsersNames")
+    public ResponseEntity<List<String>> getUsersNames(){
+    	return ResponseEntity.ok(userService.getUsersNames());
+    }
+    
+    @PostMapping("/addByBulk")
+    public ResponseEntity<List<User>> createByBulk(@RequestBody List<User> usersList){
+    	userService.createUsersByBulk( usersList );
+        return ResponseEntity.ok( usersList );
+    }
+    
 }
