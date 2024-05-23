@@ -1,23 +1,19 @@
 package com.meraphorce.services;
 
 import com.meraphorce.models.User;
-import com.meraphorce.respositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 
-@Service
-public class UserService {
+public interface UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    User createUser(User user);
 
-    public User createUser(User user){
-        return userRepository.save(user);
-    }
+    List<User> getAllUsers();
 
-    public  List<User> getAllUsers(){
-        return userRepository.findAll();
-    }
+    User getUserById(String id);
+
+    void deleteUser(String id);
+
+    User updateUser(String id, User user);
+
 }
+
