@@ -1,25 +1,24 @@
 package com.meraphorce.services;
 
-import com.meraphorce.exceptions.UserNotFoundException;
-import com.meraphorce.models.User;
-import com.meraphorce.respositories.UserRepository;
-import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.validation.annotation.Validated;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.meraphorce.error.exceptions.UserNotFoundException;
+import com.meraphorce.models.User;
+import com.meraphorce.respositories.UserRepository;
+
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Service class for managing users.
  */
-@Service
-@Validated
 @Slf4j
+@Service
 public class UserService {
 
     @Autowired
@@ -65,8 +64,9 @@ public class UserService {
         User existingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
 
-        existingUser.setName(user.getName());
         existingUser.setEmail(user.getEmail());
+        existingUser.setName(user.getName());
+        
         User updatedUser = userRepository.save(existingUser);
         log.info("User with ID: {} updated", updatedUser.getId());
         return updatedUser;
@@ -98,7 +98,8 @@ public class UserService {
         Optional<User> user = userRepository.findById(userId);
         if (user.isPresent()) {
             log.info("User with ID: {} found", userId);
-        } else {
+        } 
+        else {
             log.warn("User with ID: {} not found", userId);
         }
         return user;
