@@ -1,29 +1,29 @@
 package com.meraphorce.controllers;
 
-import com.meraphorce.dtos.AuthRequest;
-import com.meraphorce.dtos.UserRequest;
-import com.meraphorce.dtos.UserResponse;
-import com.meraphorce.models.User;
-import com.meraphorce.services.JwtService;
-import com.meraphorce.services.UserInfoService;
-import com.meraphorce.services.UserService;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.stream.Stream;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.meraphorce.dtos.UserRequest;
+import com.meraphorce.dtos.UserResponse;
+import com.meraphorce.models.User;
+import com.meraphorce.services.UserService;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * REST controller for managing users.
@@ -39,19 +39,7 @@ public class UserController {
 
     @Autowired
     private ModelMapper modelMapper;
-
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-
-    @Autowired
-    private UserInfoService service;
-
-    @Autowired
-    private JwtService jwtService;
-
-
+    
     /**
      * Creates a new user.
      *
@@ -61,8 +49,9 @@ public class UserController {
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest userRequest) {
         log.info("Creating user: {}", userRequest);
-
-        UserResponse createdUser = modelMapper.map(userService.createUser(modelMapper.map(userRequest, User.class)), UserResponse.class);
+        User user = modelMapper.map(userRequest, User.class);
+        user = userService.createUser( user );
+        UserResponse createdUser = modelMapper.map(user, UserResponse.class);
         return ResponseEntity.ok(createdUser);
     }
 
@@ -75,14 +64,15 @@ public class UserController {
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         log.info("Fetching all users ");
-        List<UserResponse> users = userService.getAllUsers().stream()
-                .map(user -> UserResponse
-                        .builder()
-                        .id(user.getId())
-                        .name(user.getName())
-                        .email(user.getEmail())
-                        .build())
-                .collect(Collectors.toList());
+        Stream<UserResponse> stream = userService.getAllUsers()
+        		.stream()
+        		.map(user -> UserResponse
+	                .builder()
+		                .id(user.getId())
+		                .name(user.getName())
+		                .email(user.getEmail())
+		                .build());
+        List<UserResponse> users = stream.toList();
         log.info("Fetched {} users", users.size());
         return ResponseEntity.ok(users);
     }
@@ -96,11 +86,11 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(@NotBlank @PathVariable String id) {
         log.info("Fetching user with id: {}", id);
-
         return userService.getUserById(id)
                 .map(user -> {
                     log.info("User found: {}", user);
-                    return ResponseEntity.ok(modelMapper.map(user, UserResponse.class));
+                    UserResponse dto = modelMapper.map(user, UserResponse.class);
+                    return ResponseEntity.ok( dto );
                 })
                 .orElseGet(() -> {
                     log.warn("User not found with id: {}", id);
@@ -118,7 +108,9 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(@NotBlank @PathVariable String id, @Valid @RequestBody UserRequest userRequest) {
         log.info("Updating user with id: {}", id);
-        UserResponse updatedUser = modelMapper.map(userService.updateUser(id, modelMapper.map(userRequest, User.class)), UserResponse.class);
+        User user = modelMapper.map(userRequest, User.class);
+        user = userService.updateUser(id, user);
+        UserResponse updatedUser = modelMapper.map(user, UserResponse.class);
         return ResponseEntity.ok(updatedUser);
     }
 
@@ -134,26 +126,5 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
-
-    @GetMapping("/welcome")
-    public String welcome() {
-        return "This endpoint is not secure yet";
-    }
-
-    @PostMapping("/addNewUser")
-    public String addNewUser(@RequestBody User userInfo) {
-        userInfo.setId(UUID.randomUUID().toString());
-        return service.addUser(userInfo);
-    }
-
-    @PostMapping("/generateToken")
-    public String authenticateAndGetToken(@RequestBody AuthRequest authRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
-        if (authentication.isAuthenticated()) {
-            return jwtService.generateToken(authRequest.getUsername());
-        } else {
-            throw new UsernameNotFoundException("Invalid user request!");
-        }
-    }
+    
 }
